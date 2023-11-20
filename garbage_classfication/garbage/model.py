@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 import torchvision.models as models
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.models import ResNet50_Weights
 
 from config import dataset
@@ -242,6 +243,107 @@ class GoogleNet(ImageClassificationBase):
         best_model_filename = f'model2/{accuracy_percent}_entire_model.pth'
         torch.save(self.best_model_state, best_model_weights_filename)
         torch.save(self, best_model_filename)
+
+    def load_model_dict(self, path):
+        """
+        加载模型的权重
+        :param path: 路径
+        """
+        self.load_state_dict(torch.load(path))
+        self.eval()  # 设置为评估模式
+
+
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+        # 当维度增加时的快捷连接
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = f.dropout(out, p=0.5, training=self.training)  # 添加 dropout
+        out += self.shortcut(residual)
+        out = self.relu(out)
+        return out
+
+
+class CustomResNet(ImageClassificationBase):
+    def __init__(self, pretrained=True):
+        super(CustomResNet, self).__init__()
+        self.best_accuracy = 0.0
+        self.best_model_state = None
+
+        # 初始卷积层
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+        # 残差块
+        self.residual_block1 = ResidualBlock(64, 64)
+        self.residual_block2 = ResidualBlock(64, 128, stride=2)
+        self.residual_block3 = ResidualBlock(128, 256, stride=2)
+        self.residual_block4 = ResidualBlock(256, 512, stride=2)
+
+        # 全局平均池化
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
+        # 全连接层
+        self.fc = nn.Linear(512, len(dataset.classes))
+
+        # 是否加载预训练权重
+        if pretrained:
+            resnet = models.resnet18(pretrained=True)
+            self.conv1 = resnet.conv1
+            self.bn1 = resnet.bn1
+            self.relu = resnet.relu
+            self.pool = resnet.maxpool
+
+        optimizer = torch.optim.SGD(self.parameters(), lr=0.01, momentum=0.9)
+        # 学习率调整
+        self.scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.pool(x)
+
+        x = self.residual_block1(x)
+        x = self.residual_block2(x)
+        x = self.residual_block3(x)
+        x = self.residual_block4(x)
+
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        return torch.sigmoid(x)
+
+    def save_model(self):
+        """保存模型"""
+        # 转换百分比形式
+        accuracy_percent = f'{self.best_accuracy * 100:.2f}%'
+        # 保存最佳模型参数和整个模型
+        best_model_weights_filename = f'../model/{accuracy_percent}_model_weights.pth'
+        print(best_model_weights_filename)
+        torch.save(self.best_model_state, best_model_weights_filename)
 
     def load_model_dict(self, path):
         """

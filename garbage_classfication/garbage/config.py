@@ -30,7 +30,8 @@ data_dir = r'X:\Coding\Github\PyTorch-ImageClassifier\garbage_classfication\Garb
 # 训练参数
 num_epochs = 8  # 轮次
 opt_func = torch.optim.Adam
-lr = 5.5e-5
+# lr = 5.5e-5
+lr = 6e-5
 
 batch_size = 25  # 定义批量大小
 split_sizes = [1590, 200, 737]  # 训练集验证集测试集图片数
@@ -78,10 +79,10 @@ datasets_dict = {
     '4': ImageFolder(data_dir, transform=transformers['demo4']),
 }
 
-# dataset = datasets_dict['1']
+dataset = datasets_dict['1']
 # dataset = datasets_dict['2']
 # dataset = datasets_dict['3']
-dataset = datasets_dict['4']
+# dataset = datasets_dict['4']
 
 # dataset1 = ImageFolder(data_dir, transform=transformers['demo1'])
 # dataset2 = ImageFolder(data_dir, transform=transformers['demo2'])

@@ -58,15 +58,24 @@ transforms.ToTensor()
 ]),
 'demo2': transforms.Compose([
 transforms.Resize((256, 256)),
+
 # 随机图像亮度、对比度、饱和度
+
 transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+
 # 随机翻转
+
 # transforms.RandomHorizontalFlip(),
+
 transforms.RandomRotation(5),
+
 # 随机放射变化
+
 transforms.RandomAffine(degrees=11, translate=(0.1, 0.1), scale=(0.8, 0.8)),
 transforms.ToTensor(),
+
 # 标准化图像，使用 ImageNet 的均值和标准差
+
 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))  # 归一化
 ]),
 }
@@ -74,4 +83,41 @@ transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))  # 归一化
 
 ### 猫狗
 
-数据集：[下载地址](https://www.kaggle.com/datasets/lizhensheng/-2000/discussion)  
+数据集：[下载地址](https://www.kaggle.com/datasets/lizhensheng/-2000/discussion)
+
+## 问题
+
+tmd我是说我训练的模型怎么效果这么拉跨，后面在kaggle训练的高分模型不如之前的，我才发现，kaggle上的标签读取它的顺序不一样
+而我那种映射是错误的，就是用class_index 前面没发现问题，是因为刚好和正确的顺序一样
+
+```markdown
+# ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+
+class_index = ['纸板', '玻璃', '金属', '纸', '塑料', '其他垃圾']
+
+# ['metal', 'glass', 'paper', 'trash', 'cardboard', 'plastic']
+
+class_index2 = ['金属', '玻璃', '纸', '其他垃圾', '纸板', '塑料']
+```
+
+```python
+def predict_img(path, model):
+    device = get_default_device()
+    image = Image.open(path)
+    # 大小调整为256x256像素，并且转换为Pytorch张量
+    image_clean = transformers['demo4'](image)
+    # 将图像转换为张量并移动到device
+    xb = to_device(image_clean.unsqueeze(0), device)
+    # 预测
+    yb = model(xb)
+    # 选择概率最高的类别
+    prob, preds = torch.max(yb, dim=1)
+    # print(prob.item())
+    index = preds[0].item()
+    print("index", index)
+    label = dataset.classes[index]
+    print("label", label)
+    print(dataset.classes)
+    # show_pred_image(image, index, label)
+    return label, prob.item()
+```

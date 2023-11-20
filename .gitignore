@@ -155,3 +155,5 @@ cython_debug/
 /cat_dog/test/
 /garbage_classfication/model/
 /garbage_classfication/Garbage classification/
+/garbage_classfication/bb/
+/garbage_classfication/mean/test_data/

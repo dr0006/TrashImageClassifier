@@ -149,7 +149,7 @@ if __name__ == '__main__':
     features = torch.tensor(features)
 
     # 使用PCA降维
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=150)
     features_pca = pca.fit_transform(features)
 
     # 使用K均值聚类
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     predicted_labels = kmeans.fit_predict(features_pca)
 
     # 预测标签到类别名称的映射
-    label_mapping = {0: '狗', 1: '猫'}
+    label_mapping = {0: '猫', 1: '狗'}
 
     app = QApplication(sys.argv)
     window = ImagePredictor()

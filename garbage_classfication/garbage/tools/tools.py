@@ -22,6 +22,7 @@ class_mapping = {
     "trash": "其他垃圾",
 }
 
+# ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 class_index = ['纸板', '玻璃', '金属', '纸', '塑料', '其他垃圾']
 
 
