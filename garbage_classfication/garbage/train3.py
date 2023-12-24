@@ -12,6 +12,9 @@ from garbage_classfication.garbage.config import dataset, batch_size, split_size
 from garbage_classfication.garbage.model import get_default_device, DeviceDataLoader, to_device, CustomResNet
 from garbage_classfication.garbage.tools.tools import plot_accuracies, plot_losses
 
+import warnings
+
+warnings.filterwarnings('ignore')
 if __name__ == '__main__':
     print('Training MyModel...')
     train_ds, val_ds, test_ds = random_split(dataset, split_sizes)

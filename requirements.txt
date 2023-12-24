@@ -3,13 +3,13 @@ tensorboardX~=2.6.2.2
 # torchaudio                2.1.0+cu118
 # torchvision               0.16.0+cu118
 
-torch==2.1.0
+torch==2.1.1
 numpy~=1.24.4
 matplotlib~=3.7.3
-torchvision==0.16.0
+torchvision==0.16.1
 Pillow==10.1.0
 PyQt5~=5.15.10 # UI界面
-netron~=7.2.9 # 用于可视化onnx模型结构
+netron==7.3.1 # 用于可视化onnx模型结构
 
 opencv-contrib-python~=4.8.1.78
 

@@ -8,6 +8,8 @@
 import sys
 import warnings
 
+import concurrent.futures
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, QStackedWidget
@@ -123,19 +125,23 @@ class ImagePredictorApp(QWidget):
         select_button = QPushButton('选择图片', self)
         select_button.clicked.connect(self.select_image)
 
+        batch_predict_button = QPushButton('批量预测', self)
+        batch_predict_button.clicked.connect(self.batch_predict_images)
+
         info_button = QPushButton('垃圾分类知识', self)
         info_button.clicked.connect(self.show_garbage_info)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.image_label)
         layout.addWidget(select_button)
+        layout.addWidget(batch_predict_button)
         layout.addWidget(self.predict_label)
         layout.addWidget(info_button)
 
     def select_image(self):
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, '选择图片',
-                                                   r'X:\Coding\Github\PyTorch-ImageClassifier\test_images',
+                                                   r'X:\Coding\Github\PyTorch-ImageClassifier\test_images\garbage',
                                                    'Images (*.png *.xpm *.jpg *.jpeg)')
 
         if file_path:
@@ -156,6 +162,30 @@ class ImagePredictorApp(QWidget):
         pixmap = QPixmap(path)
         pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio)
         self.image_label.setPixmap(pixmap)
+
+    def batch_predict_images(self):
+        file_dialog = QFileDialog()
+        file_paths, _ = file_dialog.getOpenFileNames(self, '选择图片文件夹',
+                                                     r'X:\Coding\Github\PyTorch-ImageClassifier\test_images\garbage',
+                                                     'Images (*.png *.xpm *.jpg *.jpeg)')
+
+        if file_paths:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # 使用多线程进行批量预测
+                predictions = list(executor.map(self.predict_single_image, file_paths))
+
+            # 将结果显示在界面上
+            self.predict_label.setText("\n".join(predictions))
+
+    def predict_single_image(self, file_path):
+        label1, prob1 = predict_img(file_path, self.model1)
+        label2, prob2 = predict_img(file_path, self.model2)
+        label3, prob3 = predict_img(file_path, self.model3)
+
+        return (f"Image: {file_path}\n"
+                f"model1: 预测类别: {label1} (Prob: {prob1:.3f})\n"
+                f"model2: 预测类别: {label2} (Prob: {prob2:.3f})\n"
+                f"model3: 预测类别: {label3} (Prob: {prob3:.3f})")
 
     def show_garbage_info(self):
         garbage_info_page.stacked_widget.setCurrentIndex(0)  # 默认显示第一页

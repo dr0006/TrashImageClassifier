@@ -87,8 +87,7 @@ transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))  # 归一化
 
 ## 问题
 
-tmd我是说我训练的模型怎么效果这么拉跨，后面在kaggle训练的高分模型不如之前的，我才发现，kaggle上的标签读取它的顺序不一样
-而我那种映射是错误的，就是用class_index 前面没发现问题，是因为刚好和正确的顺序一样
+就是用class_index 前面没发现问题，是因为刚好和正确的顺序一样
 
 ```markdown
 # ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
