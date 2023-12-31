@@ -12,7 +12,8 @@ import concurrent.futures
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, QStackedWidget
+from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, QStackedWidget, \
+    QScrollArea
 
 from garbage_classfication.garbage.model import get_default_device, to_device, ResNet, CustomResNet, GoogleNet
 from garbage_classfication.garbage.tools.predict_img import predict_img
@@ -100,6 +101,9 @@ class ImagePredictorApp(QWidget):
 
         self.predict_label = None
         self.image_label = None
+        self.scroll_area = None
+        self.scroll_widget = None
+        self.scroll_layout = None
         self.device = get_default_device()
 
         self.model1 = to_device(ResNet(), self.device)
@@ -109,6 +113,8 @@ class ImagePredictorApp(QWidget):
         self.model1.load_model_dict('../model/resnet50/96.50%_model_weights.pth')
         self.model2.load_model_dict('../model/89.67%_model_weights.pth')
         self.model3.load_model_dict('../model/googleNet/92.50%_model_weights.pth')
+
+        self.predictions_history = []
 
         self.init_ui()
 
@@ -121,6 +127,14 @@ class ImagePredictorApp(QWidget):
 
         self.predict_label = QLabel(self)
         self.predict_label.setAlignment(Qt.AlignCenter)
+
+        self.scroll_area = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+
+        self.scroll_widget = QWidget(self.scroll_area)
+        self.scroll_area.setWidget(self.scroll_widget)
+
+        self.scroll_layout = QVBoxLayout(self.scroll_widget)
 
         select_button = QPushButton('选择图片', self)
         select_button.clicked.connect(self.select_image)
@@ -136,6 +150,7 @@ class ImagePredictorApp(QWidget):
         layout.addWidget(select_button)
         layout.addWidget(batch_predict_button)
         layout.addWidget(self.predict_label)
+        layout.addWidget(self.scroll_area)
         layout.addWidget(info_button)
 
     def select_image(self):
@@ -151,12 +166,16 @@ class ImagePredictorApp(QWidget):
             label2, prob2 = predict_img(file_path, self.model2)
             label3, prob3 = predict_img(file_path, self.model3)
 
-            self.predict_label.setText(
-                f"model1:预测类别: {label1} (Prob: {prob1:.3f}))"
-                f"\n"
-                f"model2:预测类别: {label2} (Prob: {prob2:.3f})"
-                f"\n"
-                f"model3预测类别: {label3} (Prob: {prob3:.3f})")
+            prediction_result = (
+                f"Image: {file_path}\n"
+                f"model1: 预测类别: {label1} (Prob: {prob1:.3f})\n"
+                f"model2: 预测类别: {label2} (Prob: {prob2:.3f})\n"
+                f"model3: 预测类别: {label3} (Prob: {prob3:.3f})"
+            )
+
+            self.predictions_history.append(prediction_result)
+            self.predict_label.setText(prediction_result)
+            self.update_scroll_area()
 
     def show_image(self, path):
         pixmap = QPixmap(path)
@@ -175,22 +194,40 @@ class ImagePredictorApp(QWidget):
                 predictions = list(executor.map(self.predict_single_image, file_paths))
 
             # 将结果显示在界面上
-            self.predict_label.setText("\n".join(predictions))
+            self.predictions_history.extend(predictions)
+            self.update_scroll_area()
 
     def predict_single_image(self, file_path):
         label1, prob1 = predict_img(file_path, self.model1)
         label2, prob2 = predict_img(file_path, self.model2)
         label3, prob3 = predict_img(file_path, self.model3)
 
-        return (f"Image: {file_path}\n"
-                f"model1: 预测类别: {label1} (Prob: {prob1:.3f})\n"
-                f"model2: 预测类别: {label2} (Prob: {prob2:.3f})\n"
-                f"model3: 预测类别: {label3} (Prob: {prob3:.3f})")
+        return (
+            f"Image: {file_path}\n"
+            f"model1: 预测类别: {label1} (Prob: {prob1:.3f})\n"
+            f"model2: 预测类别: {label2} (Prob: {prob2:.3f})\n"
+            f"model3: 预测类别: {label3} (Prob: {prob3:.3f})"
+        )
 
     def show_garbage_info(self):
         garbage_info_page.stacked_widget.setCurrentIndex(0)  # 默认显示第一页
         garbage_info_page.show()  # 显示子页面
         self.hide()  # 隐藏主页面
+
+    def display_predictions(self):
+        # Clear previous predictions from the scroll layout
+        for i in reversed(range(self.scroll_layout.count())):
+            self.scroll_layout.itemAt(i).widget().setParent(None)
+
+        # Add the result to the scroll layout
+        for prediction in self.predictions_history:
+            prediction_label = QLabel(prediction, self)
+            prediction_label.setWordWrap(True)
+            self.scroll_layout.addWidget(prediction_label)
+
+    def update_scroll_area(self):
+        self.display_predictions()
+        self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
 
 if __name__ == '__main__':

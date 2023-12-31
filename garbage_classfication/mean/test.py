@@ -5,23 +5,49 @@
 @Time  : 2023/11/21 0:18
 @Description:
 """
+import os
 import joblib
 import torch
 from PIL import Image
 from torchvision import transforms, models
+
+import time
+
 import warnings
 
 warnings.filterwarnings('ignore')
 
+# 记录开始时间
+start_time = time.time()
+
 # 加载K均值聚类模型
+print('kmeans Loading....')
 kmeans_loaded = joblib.load('./joblib_files/kmeans_model.joblib')
 
+# 记录结束时间
+end_time = time.time()
+
+# 打印加载时间
+print(f'K-means model loaded in {end_time - start_time} seconds')
+
+# 记录开始时间
+start_time = time.time()
+
 # 加载PCA模型
+print('PCA Loading....')
 pca_loaded = joblib.load('./joblib_files/pca_model.joblib')
 
+# 记录结束时间
+end_time = time.time()
+
+# 打印加载时间
+print(f'PCA model loaded in {end_time - start_time} seconds')
+
 # 加载预训练的ResNet模型
+print("model Loading....")
 model = models.resnet18(pretrained=True)
-model = torch.nn.Sequential(*(list(model.children())[:-1]))
+model = torch.nn.Sequential(*(list(model.children())[:-1]))  # 去掉了最后一层，用于特征提取
+# print(model)
 
 # 图像预处理
 transform = transforms.Compose([
@@ -34,10 +60,6 @@ def predict_image(image_path, model, pca, kmeans, label_mapping):
     """
     预测新图像的类别
     """
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
     image = Image.open(image_path).convert("RGB")
     image = transform(image).unsqueeze(0)
 
@@ -57,10 +79,31 @@ def predict_image(image_path, model, pca, kmeans, label_mapping):
     return predicted_class
 
 
+def batch_predict_images(folder_path, model, pca, kmeans, label_mapping):
+    predictions = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith(('.jpg', '.jpeg', '.png')):
+            image_path = os.path.join(folder_path, filename)
+            predicted_class = predict_image(image_path, model, pca, kmeans, label_mapping)
+            predictions.append((filename, predicted_class))
+
+    return predictions
+
+
 # 预测标签到类别名称的映射
 label_mapping = {0: 'paper', 1: 'Metal', 2: 'clothes', 3: 'shoes'}  # 替换为实际类别名称
-# 测试一个新图像
-new_image_path = r"X:\Coding\Github\PyTorch-ImageClassifier\garbage_classfication\mean\test_data\paper\paper166.jpg"
-predicted_class = predict_image(new_image_path, model, pca_loaded, kmeans_loaded, label_mapping)
+"""
+# 测试一个文件夹中的所有图像
+folder_path = r"X:\Coding\Github\PyTorch-ImageClassifier\garbage_classfication\bb"
+batch_predictions = batch_predict_images(folder_path, model, pca_loaded, kmeans_loaded, label_mapping)
 
-print(f'新图像的预测类别是：{predicted_class}')
+for filename, predicted_class in batch_predictions:
+    print(f'{filename}: 预测类别是 {predicted_class}')
+
+"""
+
+# img_path = r"X:\Coding\Github\PyTorch-ImageClassifier\test_images\shoe.png"
+# img_path = r"X:\Coding\Github\PyTorch-ImageClassifier\test_images\shoe1.png"
+img_path = r"X:\Coding\Github\PyTorch-ImageClassifier\test_images\clothes.png"
+pre_label = predict_image(img_path, model=model, pca=pca_loaded, kmeans=kmeans_loaded, label_mapping=label_mapping)
+print(pre_label)

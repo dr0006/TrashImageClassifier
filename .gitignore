@@ -157,3 +157,7 @@ cython_debug/
 /garbage_classfication/Garbage classification/
 /garbage_classfication/bb/
 /garbage_classfication/mean/test_data/
+/picgan/
+/discriminator.pth
+/generator.pth
+/data/

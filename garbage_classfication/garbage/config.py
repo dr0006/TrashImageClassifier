@@ -28,7 +28,7 @@ def add_gaussian_noise_transform(x):
 data_dir = r'X:\Coding\Github\PyTorch-ImageClassifier\garbage_classfication\Garbage classification\Garbage ' \
            r'classification'  # 数据目录
 # 训练参数
-num_epochs = 8  # 轮次
+num_epochs = 20  # 轮次
 opt_func = torch.optim.Adam
 # lr = 5.5e-5
 lr = 6e-5

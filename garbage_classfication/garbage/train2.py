@@ -21,7 +21,7 @@ if __name__ == '__main__':
     print("训练集、验证集和测试集大小:")
     print(len(train_ds), len(val_ds), len(test_ds))
 
-    # 创建 ResNet 模型实例
+    # 创建 GoogleNet 模型实例
     model = GoogleNet()
     model.print_dataset()
 
