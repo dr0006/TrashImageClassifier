@@ -211,7 +211,7 @@ class CNN_V1(nn.Module):
 
         return x
 
-# model = CNN_V1(out_1=32, out_2=64, out_3=128, number_of_classes=10, p=0.5)
+### model = CNN_V1(out_1=32, out_2=64, out_3=128, number_of_classes=10, p=0.5)
 
 
 
